@@ -25,6 +25,9 @@
     <enableHttpsExploitWii>false</enableHttpsExploitWii>
     <enableHttpsExploitDS>false</enableHttpsExploitDS>
 
+    <!-- Path to the Mario Kart Wii - Server executable -->
+    <mkwServerPath>mkw-server</mkwServerPath>
+
     <!-- Path to the certificate and key used for modern web browser requests -->
     <certPath>fullchain.pem</certPath>
     <keyPath>privkey.pem</keyPath>
@@ -67,7 +70,4 @@
 
     <!-- API secret -->
     <apiSecret>hQ3f57b3tW2WnjJH3v</apiSecret>
-    
-    <!-- Path to the Mario Kart Wii - Server executable -->
-    <mkwServerPath>/mkw</mkwServerPath>
 </Config>
