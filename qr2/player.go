@@ -378,13 +378,12 @@ func loadPlayers() error {
 // - both players have each other added
 func (p *Player) canJoinFriend(l *LoginInfo) error {
 	// check for open host
-	if !l.OpenHost {
-		return errors.New("Open host is disabled")
+	if l.OpenHost {
+		return nil
 	}
 
 	if p.login == nil {
 		return errors.New("Player's login is nil")
-
 	}
 
 	for _, friendsFriend := range l.friendsList {
@@ -393,5 +392,5 @@ func (p *Player) canJoinFriend(l *LoginInfo) error {
 		}
 	}
 
-	return errors.New("Player's aren't mutural friends")
+	return errors.New("Player's aren't mutural friends and host has open-host disabled")
 }
