@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"net"
+	"os"
 	"os/exec"
 	"syscall"
 
@@ -52,6 +53,9 @@ func startMKWServer(r *Room) (*MKWServer, error) {
 	)
 
 	logging.Info(moduleName, "Running command to start mkw-server process:", cmd)
+
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
 
 	if err := cmd.Start(); err != nil {
 		return nil, fmt.Errorf("failed to start mkw-server process: %w", err)
