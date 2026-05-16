@@ -107,7 +107,7 @@ func handleCompleteMessage(completeMessage []byte, conn net.Conn) {
 			logging.Info(moduleName, err.Error())
 			return
 		}
-		logging.Info(moduleName, "Handling MKWServerResponceType.Ready")
+		logging.Info(moduleName, "Handling MKWServerResponseType.Ready")
 		mkwServer := mkwServers[int(response.port)]
 		if mkwServer == nil {
 			logging.Info(moduleName, "No MKWServer on port", response.port)
