@@ -51,9 +51,10 @@ type Player struct {
 	suspendVote      bool   // vote to suspend match making.
 	localPlayerCount uint32 // 4 bytes rather than 1 since it has to be represented in little endian
 
-	roomManagerConnnectionIndex         uint64
-	roomManagerAddr                     string // address roommanager sends to
-	numConsecutiveRoomManagerSendErrors uint32
+	// Room Manager fields
+	connIdx               uint64
+	roomManagerAddr       string
+	consecutiveSendErrors uint32
 }
 
 var (
@@ -120,11 +121,11 @@ func (p *Player) localPlayerCountOk() bool {
 }
 
 func (p *Player) sendReliableMsgToPlayer(msg []byte) error {
-	return common.SendPacket(ServerName, p.roomManagerConnnectionIndex, msg)
+	return common.SendPacket(ServerName, p.connIdx, msg)
 }
 
 func (p *Player) setRoomManagerConnection(connectionIndex uint64, address string) {
-	p.roomManagerConnnectionIndex = connectionIndex
+	p.connIdx = connectionIndex
 	p.roomManagerAddr = address
 }
 
@@ -176,6 +177,7 @@ func setPlayerData(moduleName string, addr net.Addr, playerId uint32, payload ma
 				player.SearchId = searchID
 				player.Data["+searchid"] = strconv.FormatUint(searchID, 10)
 				playerBySearchID[searchID] = player
+				logging.Info(moduleName, "Assigning playerId", player.PlayerId, "searchId:", searchID)
 				break
 			}
 		}
@@ -304,7 +306,7 @@ func GetPlayerServers() []map[string]string {
 
 func (p *Player) canCreateRoom() error {
 	if p.roomPointer != nil {
-		return errors.New("Already in a room")
+		return fmt.Errorf("Already in a room (%d)", p.roomPointer.roomID)
 	}
 
 	if !p.localPlayerCountOk() {

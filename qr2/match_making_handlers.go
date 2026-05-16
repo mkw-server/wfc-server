@@ -77,7 +77,7 @@ func handleSuspendRequest(p *Player, requestSuspend bool) error {
 
 func handleSearchPublicRoomRequest(p *Player, searchReq *SearchPublicRoomRequest) error {
 	if p.roomPointer != nil {
-		return fmt.Errorf("Player %d requested to search for a room, but their roomPointer isn't nil", p.PlayerId)
+		return fmt.Errorf("Player %d requested to search for a room, but their roomPointer isn't nil (room %d)", p.PlayerId, p.roomPointer.roomID)
 	}
 
 	return findPublicRoom(p, searchReq.region, searchReq.mode)

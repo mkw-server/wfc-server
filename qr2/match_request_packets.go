@@ -7,6 +7,18 @@ import (
 	"wwfc/common"
 )
 
+type MatchRequestType uint8
+
+// These are requests players send to wfc-server
+const (
+	OpenRoom         = 0
+	JoinFriend       = 1
+	LeaveRoom        = 2
+	Suspend          = 3
+	SearchPublicRoom = 4
+	LocalPlayerCount = 5
+)
+
 type MatchRequestHeader struct {
 	Magic       uint32 // "MREQ"
 	requestType MatchRequestType
@@ -30,18 +42,6 @@ type SearchPublicRoomRequest struct {
 	region common.MKWServerSearchRegion
 	mode   common.MKWServerGameMode
 }
-
-type MatchRequestType uint8
-
-const (
-	OpenRoom         = 0
-	JoinFriend       = 1 // TODO: MKW-Server refers to this as JoinRoom, make consistent
-	LeaveRoom        = 2
-	Suspend          = 3
-	SearchPublicRoom = 4
-	LocalPlayerCount = 5
-	MKWServerLog     = 0xff
-)
 
 const MatchRequestHeaderMagic uint32 = 0x77826981
 

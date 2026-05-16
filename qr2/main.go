@@ -11,6 +11,8 @@ import (
 	"github.com/logrusorgru/aurora/v3"
 )
 
+const moduleName = "QR2"
+
 const (
 	QueryRequest            = 0x00
 	ChallengeRequest        = 0x01

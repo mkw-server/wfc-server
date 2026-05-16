@@ -26,7 +26,7 @@ func findPublicRoom(p *Player, region common.MKWServerSearchRegion, gameMode com
 			continue
 		}
 
-		logging.Info(moduleName, "Found a public room Player", p.PlayerId, "can join!")
+		logging.Info(moduleName, "Found a public room", r.roomID, "Player", p.PlayerId, "can join!")
 
 		// to support vr based searches, we would need to loop through all rooms before adding players
 		err := r.tryAddPlayer(p, false)

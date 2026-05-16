@@ -77,10 +77,12 @@ func createRoom(creator *Player, region common.MKWServerSearchRegion, gameMode c
 		room.host = creator
 	}
 
-	room.mkwServer = startMKWServer(room)
-	if room.mkwServer == nil {
-		return fmt.Errorf("mkw-server process failed to start for room", room.roomID)
+	mkwServer, err := startMKWServer(room)
+	if err != nil {
+		return fmt.Errorf("mkw-server process failed %d. startMKWServer() %s", room.roomID, err.Error())
 	}
+
+	room.mkwServer = mkwServer
 
 	err = room.tryAddPlayer(creator, true)
 	if err != nil {
@@ -92,7 +94,7 @@ func createRoom(creator *Player, region common.MKWServerSearchRegion, gameMode c
 	return nil
 }
 
-// at this point, we've varified that friendsAddedOrOpenHost() returned true, the host is the rooms host according to both the room and player types
+// at this point, we've verified that friendsAddedOrOpenHost() returned true, the host is the rooms host according to both the room and player types
 func (r *Room) tryAddPlayer(p *Player, isCreator bool) error {
 	err := r.cantJoin(p.localPlayerCount)
 	if err != nil {
@@ -124,9 +126,9 @@ func (r *Room) tryAddPlayer(p *Player, isCreator bool) error {
 	// created --- we have to wait for the process to tell us it started and is ready
 	// to add players
 	if !isCreator {
-		err := r.mkwServer.sendJoinRoom(p)
+		err := r.mkwServer.sendAddPlayerRequest(p)
 		if err != nil {
-			return fmt.Errorf("mkwServer.sendJoinRoom failed with reason %s", err.Error())
+			return fmt.Errorf("mkwServer.sendAddPlayerRequest failed with reason %s", err.Error())
 		}
 	}
 
@@ -150,7 +152,7 @@ func (r *Room) removePlayer(p *Player) error {
 	r.numAids -= 1
 	r.aidBitmap = clearAid(r.aidBitmap, leaversAid)
 	r.directAidBitmap = clearAid(r.directAidBitmap, leaversAid)
-	r.mkwServer.sendLeaveRoom(p)
+	r.mkwServer.sendRemovePlayerRequest(p)
 
 	if r.shouldCloseRoom(p) {
 		r.close()
@@ -251,16 +253,16 @@ func (r *Room) broadcastMatchPackets() {
 			hostAid = NoAid
 		}
 
-		err := sendToAid(r.aidBitmap, r.numAids, r.directAidBitmap, r.roomID, hostAid, r.suspended, r.canceled, r.localPlayerCounts(), p.aid, p.roomManagerConnnectionIndex)
+		err := sendToAid(r.aidBitmap, r.numAids, r.directAidBitmap, r.roomID, hostAid, r.suspended, r.canceled, r.localPlayerCounts(), p.aid, p.connIdx)
 		if err != nil {
-			p.numConsecutiveRoomManagerSendErrors += 1
+			p.consecutiveSendErrors += 1
 		} else {
-			p.numConsecutiveRoomManagerSendErrors = 0
+			p.consecutiveSendErrors = 0
 		}
-		if p.numConsecutiveRoomManagerSendErrors >= 5 {
+		if p.consecutiveSendErrors >= 5 {
 			// gotta remove them from the room
 			logging.Info(moduleName, "Player timed out, removing from room", aurora.Cyan(p.Addr.String()), "Aid", aurora.Cyan(p.aid))
-			p.numConsecutiveRoomManagerSendErrors = 0
+			p.consecutiveSendErrors = 0
 			logging.Info(moduleName, "removeFromRoom() called!!!!!!")
 			r.removePlayer(p)
 		}
@@ -315,7 +317,7 @@ func (r *Room) sendMKWServerJoinRoomForEachPlayer() error {
 			continue
 		}
 
-		err := mkwServer.sendJoinRoom(p)
+		err := mkwServer.sendAddPlayerRequest(p)
 		if err != nil {
 			return err
 		}
