@@ -1,12 +1,16 @@
-# wwfc
-WiiLink Wi-Fi Connection aims to be an open source server replacement for Nintendo Wi-Fi Connection. Currently, a work in progress
+# wfc-server
+
+`wfc-server` is MKW-Server's fork of [WiiLink's](https://wiilink.ca/) [wfc-server](https://github.com/WiiLink24/wfc-server), a WIP open source server replacement for Nintendo Wi-Fi Connection. It has been modified to support MKW-Server's match-making system and [mkw-server](https://github.com/mkw-server/mkw-server) instance managing.
 
 ## Current Support
+
 - Matchmaking (No server sorting yet)
 - Adding Friends
 
 ## Setup
+
 You will need:
+
 - PostgreSQL
 
 1. Create a PostgreSQL database. Note the database name, username, and password.
