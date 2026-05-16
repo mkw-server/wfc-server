@@ -65,7 +65,10 @@ func handleSuspendRequest(p *Player, requestSuspend bool) error {
 
 	r := p.roomPointer
 	if r == nil {
-		return fmt.Errorf("Player %d requested to suspend (value: %d ) but doesn't belong to a room", p.PlayerId, requestSuspend)
+		// Ideally an error would be returned, but the client can't distinguish between
+		// a graceful race end and a ftw dc. In the latter case, they will spam suspend requests.
+		// So return nil until a client patch is made to scilence noise. This is a todo
+		return nil
 	}
 
 	p.suspendVote = requestSuspend
