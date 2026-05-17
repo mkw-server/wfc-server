@@ -14,8 +14,8 @@ const MKWServerAddressPacketMagic uint32 = 0x4D4B5753 // 'MKWS'
 type RequestToMKWServer uint8
 
 const (
-	AddPlayer    = 1
-	RemovePlayer = 2
+	AddPlayer   	= 1
+	RemovePlayer	= 2
 )
 
 // this will tell mkw-server to update its state since a player joined
