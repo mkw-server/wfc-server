@@ -52,9 +52,8 @@ type Player struct {
 	localPlayerCount uint32 // 4 bytes rather than 1 since it has to be represented in little endian
 
 	// Room Manager fields
-	connIdx               uint64
-	roomManagerAddr       string
-	consecutiveSendErrors uint32
+	connIdx         uint64
+	roomManagerAddr string
 }
 
 var (

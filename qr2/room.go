@@ -253,20 +253,7 @@ func (r *Room) broadcastMatchPackets() {
 			hostAid = NoAid
 		}
 
-		err := sendToAid(r.aidBitmap, r.numAids, r.directAidBitmap, r.roomID, hostAid, r.suspended, r.canceled, r.localPlayerCounts(), p.aid, p.connIdx)
-		if err != nil {
-			p.consecutiveSendErrors += 1
-		} else {
-			p.consecutiveSendErrors = 0
-		}
-		if p.consecutiveSendErrors >= 5 {
-			// gotta remove them from the room
-			logging.Info(moduleName, "Player timed out, removing from room", aurora.Cyan(p.Addr.String()), "Aid", aurora.Cyan(p.aid))
-			p.consecutiveSendErrors = 0
-			logging.Info(moduleName, "removeFromRoom() called!!!!!!")
-			r.removePlayer(p)
-		}
-
+		_ = sendToAid(r.aidBitmap, r.numAids, r.directAidBitmap, r.roomID, hostAid, r.suspended, r.canceled, r.localPlayerCounts(), p.aid, p.connIdx)
 	}
 }
 
