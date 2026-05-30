@@ -19,7 +19,7 @@ const (
 )
 
 // this will tell mkw-server to update its state since a player joined
-func (mkwServer *MKWServer) sendAddPlayerRequest(player *Player) error {
+func (mkwServer *MKWServer) sendAddPlayerRequest(player *Player, isHost bool) error {
 	if player == nil {
 		logging.Info(moduleName, "sendAddPlayerRequest player is nil")
 		return errors.New("player passed into sendAddPlayerRequest is nil!")
@@ -29,7 +29,7 @@ func (mkwServer *MKWServer) sendAddPlayerRequest(player *Player) error {
 		return errors.New("The connection to mkw-server is nil! This is bad and shouldn't happen just before sending.")
 	}
 
-	addPlayerReq, err := packAddPlayerRequest(player)
+	addPlayerReq, err := packAddPlayerRequest(player, isHost)
 	if err != nil {
 		return err
 	}
@@ -71,7 +71,7 @@ func (mkwServer *MKWServer) sendRemovePlayerRequest(player *Player) {
 		searchId    uint64           // might not be needed?
 	}
 */
-func packAddPlayerRequest(player *Player) ([]byte, error) {
+func packAddPlayerRequest(player *Player, isHost bool) ([]byte, error) {
 	if player == nil {
 		return nil, errors.New("player passed into packAddPlayerRequest is nil")
 	}
@@ -81,7 +81,7 @@ func packAddPlayerRequest(player *Player) ([]byte, error) {
 	binary.Write(buf, binary.BigEndian, ip)
 	binary.Write(buf, binary.BigEndian, port)
 	binary.Write(buf, binary.BigEndian, player.aid)
-	binary.Write(buf, binary.BigEndian, player.isHost)
+	binary.Write(buf, binary.BigEndian, isHost)
 	binary.Write(buf, binary.BigEndian, player.SearchId)
 	return buf.Bytes(), nil
 }

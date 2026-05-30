@@ -52,7 +52,7 @@ func handleJoinFriendRequest(joiner *Player, request *JoinFriendRequest) error {
 func handleLeaveRoomRequest(p *Player) error {
 	r := p.roomPointer
 	if r == nil {
-		return fmt.Errorf("Player %d sent a LeaveRoom request when they're roomless!")
+		return fmt.Errorf("Player %d sent a LeaveRoom request when they're roomless!", p.PlayerId)
 	}
 
 	return r.removePlayer(p)

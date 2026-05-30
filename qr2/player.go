@@ -47,7 +47,6 @@ type Player struct {
 	searchIdGuesses uint32 // attempt to prevent brute forcing the searchId
 
 	aid              uint8  // only set when in a room
-	isHost           bool   // only set when in a room
 	suspendVote      bool   // vote to suspend match making.
 	localPlayerCount uint32 // 4 bytes rather than 1 since it has to be represented in little endian
 
@@ -62,7 +61,7 @@ var (
 	mutex            = deadlock.Mutex{}
 )
 
-func (p *Player) setRoomInfo(r *Room, aid uint8, isHost bool) {
+func (p *Player) setRoomInfo(r *Room, aid uint8) {
 	if r == nil {
 		logging.Info(moduleName, "Can't set player's room info, room is nil!")
 		return
@@ -76,13 +75,11 @@ func (p *Player) setRoomInfo(r *Room, aid uint8, isHost bool) {
 	p.roomPointer = r
 	p.RoomName = r.roomName
 	p.aid = aid
-	p.isHost = isHost
 }
 
 // sets Player fields related to being in a room. aid, roomPointer, etc.
 func (p *Player) resetRoomInfo() {
 	p.aid = NoAid
-	p.isHost = false
 	p.suspendVote = false
 
 	p.roomPointer = nil
@@ -101,7 +98,10 @@ func removePlayer(addr uint64) {
 	// remove player from room if they're in one
 	room := player.roomPointer
 	if room != nil {
-		room.removePlayer(player)
+		err := room.removePlayer(player)
+		if err != nil {
+			logging.Error(moduleName, "player.removePlayer() failed to remove PlayerId", player.PlayerId, "with reason", err.Error())
+		}
 	}
 
 	if player.login != nil {
