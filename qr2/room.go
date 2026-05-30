@@ -170,7 +170,7 @@ func (r *Room) removePlayer(p *Player) error {
 }
 
 func (r *Room) shouldCloseRoom(leavingPlayer *Player) bool {
-	// Only close private rooms if the host is leaving
+	// Only private rooms should be closed if the host is leaving
 	if r.Region == common.Private && leavingPlayer == r.host {
 		logging.Info(moduleName, "Host left room. Attempting to close it!")
 		return true
@@ -250,7 +250,8 @@ func (r *Room) broadcastMatchPackets() {
 
 		hostAid := r.host.aid
 
-		// r.canceled means the room has been closed. Set the host aid to 0xff
+		// The game checks if the host's aid is 0xff when the room is
+		// closing in a few places. Exact purpose isn't clear.
 		if r.canceled {
 			hostAid = NoAid
 		}
