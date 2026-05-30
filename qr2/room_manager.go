@@ -1,6 +1,7 @@
 package qr2
 
 import (
+	"bytes"
 	"encoding/binary"
 	"fmt"
 	"math/rand"
@@ -54,6 +55,7 @@ func HandlePacket(index uint64, data []byte, address string) {
 
 	if len(*buffer)+len(data) > 0x1000 {
 		logging.Error(moduleName, "Buffer overflow")
+		// TODO: Probably try to check if the player is in a room and do any clean up there
 		common.CloseConnection(ServerName, index)
 		buffer = nil
 		return
@@ -63,8 +65,18 @@ func HandlePacket(index uint64, data []byte, address string) {
 	for len(*buffer) >= 0x10 {
 		matchRequestHeader, err := tryParseMatchRequestHeader((*buffer)[:0x10])
 		if err != nil {
-			logging.Info(moduleName, "failed to parse match request header from", address, "error is", err.Error())
-			return
+			// The only way header parsing can fail is if the magic is bad (currently). Given that,
+			// we only need to clear the buffer until the next valid magic. This is required
+			// for subsequent parsing to work.
+			next := bytes.Index(*buffer, []byte(MatchRequestHeaderMagic))
+			if next == -1 {
+				// Clear the buffer if valid magic wasn't found
+				next = len(*buffer)
+			}
+			logging.Info(moduleName, "Failed to parse match request header from", address, "error is", err.Error())
+
+			*buffer = (*buffer)[next:]
+			continue
 		}
 
 		p, err := validateBasics(matchRequestHeader)

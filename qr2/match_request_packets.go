@@ -43,7 +43,7 @@ type SearchPublicRoomRequest struct {
 	mode   common.MKWServerGameMode
 }
 
-const MatchRequestHeaderMagic uint32 = 0x77826981
+const MatchRequestHeaderMagic string = "MREQ" 
 
 func tryParseMatchRequestHeader(data []byte) (*MatchRequestHeader, error) {
 	if len(data) != 0x10 {
@@ -51,14 +51,14 @@ func tryParseMatchRequestHeader(data []byte) (*MatchRequestHeader, error) {
 	}
 
 	magic := data[:4]
-	if string(magic) != "MREQ" {
+	if string(magic) != MatchRequestHeaderMagic {
 		return nil, fmt.Errorf("Received packet with invalid magic (%s) expected MREQ", magic)
 	}
 
 	matchRequest := uint8(data[4])
 
 	return &MatchRequestHeader{
-		Magic:       MatchRequestHeaderMagic,
+		Magic:       binary.BigEndian.Uint32([]byte(MatchRequestHeaderMagic)),
 		requestType: MatchRequestType(matchRequest),
 		searchId:    binary.BigEndian.Uint64(data[8:16]),
 	}, nil
