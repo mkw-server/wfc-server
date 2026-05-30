@@ -26,6 +26,8 @@ type MatchRequestHeader struct {
 	searchId    uint64
 }
 
+const MatchRequestHeaderSize int = 0x10
+
 type JoinFriendRequest struct {
 	header          MatchRequestHeader
 	friendProfileId uint32
@@ -43,10 +45,10 @@ type SearchPublicRoomRequest struct {
 	mode   common.MKWServerGameMode
 }
 
-const MatchRequestHeaderMagic string = "MREQ" 
+const MatchRequestHeaderMagic string = "MREQ"
 
 func tryParseMatchRequestHeader(data []byte) (*MatchRequestHeader, error) {
-	if len(data) != 0x10 {
+	if len(data) != MatchRequestHeaderSize {
 		return nil, fmt.Errorf("Received packet with invalid length %d expected 16", len(data))
 	}
 

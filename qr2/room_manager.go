@@ -61,9 +61,9 @@ func HandlePacket(index uint64, data []byte, address string) {
 		return
 	}
 
-	// 0x10 being the minimum size for a complete match packet (header size)
-	for len(*buffer) >= 0x10 {
-		matchRequestHeader, err := tryParseMatchRequestHeader((*buffer)[:0x10])
+	// Try to process as many packets as possible
+	for len(*buffer) >= MatchRequestHeaderSize {
+		matchRequestHeader, err := tryParseMatchRequestHeader((*buffer)[:MatchRequestHeaderSize])
 		if err != nil {
 			// The only way header parsing can fail is if the magic is bad (currently). Given that,
 			// we only need to clear the buffer until the next valid magic. This is required
