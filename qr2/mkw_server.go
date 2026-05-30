@@ -68,11 +68,13 @@ func startMKWServer(r *Room) (*MKWServer, error) {
 		} else {
 			logging.Info(moduleName, "mkw-server process exited successfully")
 		}
-		// Close the room if mkw-server ends. This triggers a broadcast to inform clients. This isn't
-		// perfect for players searching for a public room since they'll silently not be able to
-		// find a room until they exit and re-enter the match making state.
-		// All other players just disconnect. This is a todo
-		r.close()
+		// Close the room if mkw-server ends (if not already closed).
+		// fixme: This isn't perfect for players searching for a public room since they'll
+		// silently not be able to find a room until they exit and re-enter the match making state.
+		// All other players just disconnect.
+		if !r.canceled {
+			r.close()
+		}
 
 	}(cmd)
 

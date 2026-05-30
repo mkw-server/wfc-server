@@ -143,7 +143,6 @@ func (r *Room) removePlayer(p *Player) error {
 
 	if !r.players[p] {
 		return fmt.Errorf("Can't remove player %d from room, doesn't exist", p.PlayerId)
-
 	}
 
 	// at this point, a guest is leaving, update the room accordingly
@@ -156,6 +155,8 @@ func (r *Room) removePlayer(p *Player) error {
 
 	if r.shouldCloseRoom(p) {
 		r.close()
+		// return early since close() resets the player's room fields and broadcasts
+		return nil
 	}
 
 	p.resetRoomInfo()
@@ -278,13 +279,9 @@ func (r *Room) close() {
 		p.resetRoomInfo()
 	}
 
-	mkwServer := r.mkwServer
-	if mkwServer == nil {
-		logging.Info(moduleName, "Room's MKW-Server is nil, can't terminate")
-		return
+	if r.mkwServer != nil {
+		r.mkwServer.terminateProcess()
 	}
-
-	mkwServer.terminateProcess()
 
 	r.broadcastMatchPackets()
 
