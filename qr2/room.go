@@ -40,12 +40,12 @@ type Room struct {
 	canceled        bool   // whether room is canceled
 }
 
-func createRoom(creator *Player, region common.MKWServerSearchRegion, gameMode common.MKWServerGameMode) error {
-	if creator == nil {
-		return errors.New("Creator (player creating the room) is nil! Can't create room!")
+func createRoom(host *Player, region common.MKWServerSearchRegion, gameMode common.MKWServerGameMode) error {
+	if host == nil {
+		return errors.New("Host is nil! Can't create room!")
 	}
 
-	err := creator.canCreateRoom()
+	err := host.canCreateRoom()
 	if err != nil {
 		return fmt.Errorf("canCreateRoom() failed with reason: %s", err.Error())
 	}
@@ -60,7 +60,8 @@ func createRoom(creator *Player, region common.MKWServerSearchRegion, gameMode c
 		Region:          region,
 		gameMode:        gameMode,
 		LastJoinIndex:   0,
-		players:         map[*Player]bool{creator: true},
+		host:            host,
+		players:         map[*Player]bool{host: true},
 		RaceNumber:      0,
 		CourseID:        -1,
 		EngineClassID:   -1,
@@ -72,11 +73,6 @@ func createRoom(creator *Player, region common.MKWServerSearchRegion, gameMode c
 
 	logging.Notice(moduleName, "Successfully Created room", room.roomID)
 
-	// only set the host for private rooms
-	if region == common.Private {
-		room.host = creator
-	}
-
 	mkwServer, err := startMKWServer(room)
 	if err != nil {
 		return fmt.Errorf("mkw-server process failed %d. startMKWServer() %s", room.roomID, err.Error())
@@ -84,7 +80,7 @@ func createRoom(creator *Player, region common.MKWServerSearchRegion, gameMode c
 
 	room.mkwServer = mkwServer
 
-	err = room.tryAddPlayer(creator, true)
+	err = room.tryAddPlayer(host, true)
 	if err != nil {
 		return err
 	}
@@ -113,12 +109,7 @@ func (r *Room) tryAddPlayer(p *Player, isCreator bool) error {
 	r.numAids++
 
 	// if the room private and empty, this player is the host
-	var isHost bool = false
-	if r.Region == common.Private {
-		isHost = r.empty()
-	}
-
-	p.setRoomInfo(r, aid, isHost)
+	p.setRoomInfo(r, aid)
 
 	// Send a JoinRoom message to mkw-server to inform them a new player has joined.
 	// Only do this here if the player isn't the room's creator. The creator is
@@ -126,7 +117,7 @@ func (r *Room) tryAddPlayer(p *Player, isCreator bool) error {
 	// created --- we have to wait for the process to tell us it started and is ready
 	// to add players
 	if !isCreator {
-		err := r.mkwServer.sendAddPlayerRequest(p)
+		err := r.mkwServer.sendAddPlayerRequest(p, isCreator)
 		if err != nil {
 			return fmt.Errorf("mkwServer.sendAddPlayerRequest failed with reason %s", err.Error())
 		}
@@ -159,6 +150,17 @@ func (r *Room) removePlayer(p *Player) error {
 		return nil
 	}
 
+	// If the leaver's aid is the host, try to migrate hosts.
+	// Note: Host migration is a concept that only exists for public rooms. shouldCloseRoom()
+	// handles the host leaving for private rooms.
+	if leaversAid == r.host.aid {
+		err := r.migrateHost()
+		if err != nil {
+			return fmt.Errorf("room.removePlayer() failed to migrate host from playerId %d (aid: %d) with reason: %s", p.PlayerId, p.aid, err.Error())
+		}
+		logging.Info(moduleName, "Room", r.roomName, "successfully migrated hosts from aid", leaversAid, "to", r.host.aid)
+	}
+
 	p.resetRoomInfo()
 
 	delete(r.players, p)
@@ -168,7 +170,8 @@ func (r *Room) removePlayer(p *Player) error {
 }
 
 func (r *Room) shouldCloseRoom(leavingPlayer *Player) bool {
-	if r.host != nil && leavingPlayer == r.host {
+	// Only private rooms should be closed if the host is leaving
+	if r.Region == common.Private && leavingPlayer == r.host {
 		logging.Info(moduleName, "Host left room. Attempting to close it!")
 		return true
 	}
@@ -245,11 +248,10 @@ func (r *Room) broadcastMatchPackets() {
 			continue
 		}
 
-		// use 0 as the default host aid for public rooms, which the game (probably) needs
-		var hostAid uint8 = 0
-		if r.host != nil {
-			hostAid = r.host.aid
-		}
+		hostAid := r.host.aid
+
+		// The game checks if the host's aid is 0xff when the room is
+		// closing in a few places. Exact purpose isn't clear.
 		if r.canceled {
 			hostAid = NoAid
 		}
@@ -291,26 +293,40 @@ func (r *Room) close() {
 	logging.Info(moduleName, "Successfully closed room", name)
 }
 
+// Finds a new host for the room.
+// This only works if the old host's aid is removed from the room bitmap prior to call.
+func (r *Room) migrateHost() error {
+	// Get any aid in the room to be the new host.
+	newHostAid, err := getUsedAid(r.aidBitmap)
+	if err != nil {
+		return err
+	}
+
+	newHost, err := r.getPlayerByAid(newHostAid)
+	if err != nil {
+		return err
+	}
+
+	r.host = newHost
+	return nil
+}
+
 func (r *Room) sendMKWServerJoinRoomForEachPlayer() error {
 	mkwServer := r.mkwServer
 	if mkwServer == nil {
-		return errors.New("Room " + string(r.roomID) + " has a nil mkwServer")
+		return fmt.Errorf("Room %s has a nil mkwServer", r.roomName)
 	}
 	for p, exists := range r.players {
 		if p == nil || !exists {
 			continue
 		}
 
-		err := mkwServer.sendAddPlayerRequest(p)
+		err := mkwServer.sendAddPlayerRequest(p, r.host == p)
 		if err != nil {
 			return err
 		}
 	}
 	return nil
-}
-
-func (r *Room) empty() bool {
-	return r.numAids == 0
 }
 
 func (r *Room) full() bool {
@@ -346,6 +362,24 @@ func (r *Room) localPlayerCounts() *[MaxPlayerCount]uint32 {
 		ret[p.aid] = uint32(p.localPlayerCount << 24)
 	}
 	return &ret
+}
+
+// Retreives the Player to assigned to the passed in aid
+func (r *Room) getPlayerByAid(aid uint8) (*Player, error) {
+	if aid >= MaxAid && aid != NoAid {
+		return nil, fmt.Errorf("getPlayerByAid(): Passed in invalid aid param: %d", aid)
+	}
+
+	for p, exists := range r.players {
+		if p == nil || !exists {
+			continue
+		}
+
+		if p.aid == aid {
+			return p, nil
+		}
+	}
+	return nil, fmt.Errorf("getPlayerByAid(): No player with aid %d in room %s", aid, r.roomName)
 }
 
 func ProcessGPStatusUpdate(profileID uint32, senderIP uint64, status string) {

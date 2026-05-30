@@ -25,3 +25,12 @@ func getAvailableAid(aidBitmap uint32) (uint8, error) {
 	}
 	return uint8(aid), nil
 }
+
+// Gets the lowest aid thats used
+func getUsedAid(aidBitmap uint32) (uint8, error) {
+	aid := bits.TrailingZeros32(aidBitmap)
+	if aid >= MaxPlayerCount {
+		return NoAid, errors.New("No used aids found!")
+	}
+	return uint8(aid), nil
+}
