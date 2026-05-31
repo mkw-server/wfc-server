@@ -89,9 +89,6 @@ func (g *GameSpySession) addFriend(command common.GameSpyCommand) {
 		return
 	}
 
-	fc := common.CalcFriendCodeString(uint32(newProfileId), g.User.GsbrCode[:4])
-	logging.Info(g.ModuleName, "Add friend:", aurora.Cyan(strNewProfileId), aurora.Cyan(fc))
-
 	mutex.Lock()
 	defer mutex.Unlock()
 
@@ -113,19 +110,16 @@ func (g *GameSpySession) addFriend(command common.GameSpyCommand) {
 	// Check if destination has added the sender
 	newSession, ok := sessions[uint32(newProfileId)]
 	if !ok || newSession == nil || !newSession.LoggedIn {
-		logging.Info(g.ModuleName, "Destination is not online")
 		return
 	}
 
 	if newSession.GameName != g.GameName {
 		logging.Error(g.ModuleName, "Destination is not playing the same game")
-		// g.replyError(ErrAddFriendBadNew)
 		return
 	}
 
 	if !newSession.User.OpenHost && !newSession.isFriendAdded(g.User.ProfileId) {
 		// Not an error, just ignore for now
-		logging.Info(g.ModuleName, "Destination has not added sender")
 		return
 	}
 
@@ -167,9 +161,6 @@ func (g *GameSpySession) removeFriend(command common.GameSpyCommand) {
 	}
 	delProfileID32 := uint32(delProfileID64)
 
-	fc := common.CalcFriendCodeString(delProfileID32, g.User.GsbrCode[:4])
-	logging.Info(g.ModuleName, "Remove friend:", aurora.Cyan(strDelProfileID), aurora.Cyan(fc))
-
 	mutex.Lock()
 	defer mutex.Unlock()
 
@@ -206,7 +197,6 @@ func (g *GameSpySession) authAddFriend(command common.GameSpyCommand) {
 	defer mutex.Unlock()
 
 	if !g.isFriendAuthorized(uint32(fromProfileId)) {
-		logging.Error(g.ModuleName, "Sender", aurora.Cyan(fromProfileId), "is not an authorized friend")
 		g.replyError(ErrAuthAddBadFrom)
 		return
 	}
@@ -216,7 +206,6 @@ func (g *GameSpySession) authAddFriend(command common.GameSpyCommand) {
 
 func (g *GameSpySession) setStatus(command common.GameSpyCommand) {
 	status := command.CommandValue
-	logging.Notice(g.ModuleName, "New status:", aurora.BrightMagenta(status))
 
 	qr2.ProcessGPStatusUpdate(g.User.ProfileId, g.QR2IP, status)
 
@@ -285,7 +274,6 @@ func sendMessageToProfileId(msgType string, from uint32, to uint32, msg string) 
 		return true
 	}
 
-	logging.Info("GPCM", "Destination", aurora.Cyan(to), "from", aurora.Cyan(from), "is not online")
 	return false
 }
 

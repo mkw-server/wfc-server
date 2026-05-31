@@ -117,7 +117,6 @@ func verifySignature(moduleName string, authToken string, signature string) uint
 		logging.Error(moduleName, "NG cert verify failed")
 		return 0
 	}
-	logging.Info(moduleName, "NG cert verified")
 
 	apIssuer := ngIssuer + "-" + ngName
 	apName := fmt.Sprintf("AP%02x%02x%02x%02x%02x%02x%02x%02x", apId[0], apId[1], apId[2], apId[3], apId[4], apId[5], apId[6], apId[7])
@@ -136,7 +135,6 @@ func verifySignature(moduleName string, authToken string, signature string) uint
 		logging.Error(moduleName, "AP cert verify failed")
 		return 0
 	}
-	logging.Info(moduleName, "AP cert verified")
 
 	authTokenHash := sha1.Sum([]byte(authToken))
 	if !verifyECDSA(apPublicKey, apSignature, authTokenHash[:]) {

@@ -20,6 +20,8 @@ const (
 
 // this will tell mkw-server to update its state since a player joined
 func (mkwServer *MKWServer) sendAddPlayerRequest(player *Player, isHost bool) error {
+	logging.Info(moduleName, "Attempting to inform mkw-server of new player", player.PlayerId, "added to room", player.roomPointer.roomName, "where isHost is", isHost)
+
 	if player == nil {
 		logging.Info(moduleName, "sendAddPlayerRequest player is nil")
 		return errors.New("player passed into sendAddPlayerRequest is nil!")
@@ -36,8 +38,6 @@ func (mkwServer *MKWServer) sendAddPlayerRequest(player *Player, isHost bool) er
 
 	// send it to mkw-server
 	mkwServer.conn.Write(addPlayerReq)
-	logging.Info(moduleName, "Informing MKW-Server of new player", player.PlayerId)
-
 	return nil
 }
 

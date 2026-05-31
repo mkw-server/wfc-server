@@ -142,12 +142,12 @@ func handleCompleteMessage(completeMessage []byte, conn net.Conn) {
 			return
 		}
 		searchId := response.searchId
-		logging.Info(moduleName, "MKWServerResponseType.PlayerAdded searchId", searchId)
 		player := playerBySearchID[searchId]
 		if player == nil {
 			logging.Info(moduleName, "Couldn't find player by search id! SearchId:", searchId, "while handling MKWServerResponseType.PlayerAdded")
 			return
 		}
+		logging.Info(moduleName, "MKWServerResponseType.PlayerAdded: Found player", player.PlayerId, "by SearchId", searchId)
 		room := player.roomPointer
 		if room == nil {
 			logging.Info(moduleName, "Player", player.PlayerId, "isn't in a room! In MKWServerResponseType.PlayerAdded")

@@ -106,7 +106,6 @@ func heartbeat(moduleName string, conn net.PacketConn, addr net.UDPAddr, buffer 
 			logging.Error(moduleName, "Player not found")
 		} else if playerPtr.login == nil {
 			profileId := unknowns[0]
-			logging.Info(moduleName, "Attempting to use unknown as profile ID", aurora.Cyan(profileId))
 			playerPtr.setProfileID(moduleName, profileId, "")
 		}
 		player = *playerPtr

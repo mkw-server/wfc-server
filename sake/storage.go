@@ -141,7 +141,6 @@ func handleStorageRequest(moduleName string, w http.ResponseWriter, r *http.Requ
 
 	xmlName := soap.Body.Data.XMLName.Space + "/" + soap.Body.Data.XMLName.Local
 	if headerAction == xmlName || headerAction == `"`+xmlName+`"` {
-		logging.Info(moduleName, "SOAPAction:", aurora.Yellow(soap.Body.Data.XMLName.Local))
 
 		if profileId, gameInfo, ok := getRequestIdentity(moduleName, soap.Body.Data); ok {
 			switch xmlName {
@@ -191,10 +190,6 @@ func getRequestIdentity(moduleName string, request StorageRequestData) (uint32, 
 		logging.Error(moduleName, err)
 		return 0, common.GameInfo{}, false
 	}
-
-	logging.Info(moduleName, "Profile ID:", aurora.BrightCyan(profileId))
-	logging.Info(moduleName, "Game:", aurora.Cyan(request.GameID), "-", aurora.BrightCyan(gameInfo.Name))
-	logging.Info(moduleName, "Table ID:", aurora.Cyan(request.TableID))
 
 	return profileId, *gameInfo, true
 }
@@ -267,7 +262,6 @@ func getMyRecords(moduleName string, profileId uint32, gameInfo common.GameInfo,
 		}
 	}
 
-	logging.Info(moduleName, "Wrote", aurora.Cyan(fieldCount), "field(s)")
 	return &response
 }
 
@@ -279,9 +273,6 @@ func updateRecord(moduleName string, profileId uint32, gameInfo common.GameInfo,
 	switch gameInfo.Name + "/" + request.TableID {
 	default:
 		logging.Error(moduleName, "Unknown table")
-		for _, field := range request.Values.RecordFields {
-			logging.Info(moduleName, "Field:", aurora.Cyan(field.Name), "Type:", aurora.Cyan(field.Value.XMLName.Local), "Value:", aurora.Cyan(field.Value.Value.Value))
-		}
 		return &errorResponse
 
 	case "mariokartwii/FriendInfo":
@@ -311,9 +302,6 @@ func searchForRecords(moduleName string, gameInfo common.GameInfo, request Stora
 	switch gameInfo.Name + "/" + request.TableID {
 	default:
 		logging.Error(moduleName, "Unknown table")
-		for _, field := range request.Fields.Fields {
-			logging.Info(moduleName, "Field:", aurora.Cyan(field))
-		}
 		return &errorResponse
 
 	case "mariokartwii/FriendInfo":

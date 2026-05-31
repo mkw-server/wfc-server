@@ -33,12 +33,12 @@ func tryVerifySearchIdPacketReceipt(addr net.UDPAddr, data []byte) bool {
 
 	searchID := binary.BigEndian.Uint64(data[8:16])
 	if player.SearchId == searchID {
-		logging.Info(moduleName, "Received SearchIdPacket from player with matching search ID", aurora.Cyan(searchID))
+		logging.Info(moduleName, "Received SearchIdPacket from player", player.PlayerId, "with matching search ID", aurora.Cyan(searchID))
 		player.recvSearchId = true
 		return true
 	} else {
 		player.searchIdGuesses++
-		logging.Info(moduleName, "Received SearchIdPacket with non-matching search ID", aurora.Cyan(searchID), "expected", aurora.Cyan(player.SearchId))
+		logging.Info(moduleName, "Received SearchIdPacket from", player.PlayerId, "with non-matching search ID", aurora.Cyan(searchID), "expected", aurora.Cyan(player.SearchId))
 		return false
 	}
 }
