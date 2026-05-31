@@ -46,16 +46,37 @@ func handleJoinFriendRequest(joiner *Player, request *JoinFriendRequest) error {
 		return errors.New("Rooms host isn't the expected host!")
 	}
 
-	return r.tryAddPlayer(joiner, false)
+	// TODO: Rest of this function is awkward to read
+	err = r.tryAddPlayer(joiner, false)
+	if err == nil {
+		return nil
+	} else {
+		logging.Info(moduleName, err.Error())
+	}
+
+	// Note: Vanilla MKW doesn't allow joining a friend's public room if suspended. Handle on backend anyway.
+	err = r.tryAddWaitingPlayer(joiner)
+	if err == nil {
+		return nil
+	} else {
+		logging.Info(moduleName, err.Error())
+	}
+
+	return fmt.Errorf("Player %d is unable to join friend player %d's room %s", joiner.PlayerId, friend.PlayerId, r.roomName)
 }
 
 func handleLeaveRoomRequest(p *Player) error {
 	r := p.roomPointer
-	if r == nil {
-		return fmt.Errorf("Player %d sent a LeaveRoom request when they're roomless!", p.PlayerId)
+	if r != nil {
+		return r.removePlayer(p)
 	}
 
-	return r.removePlayer(p)
+	r = p.waitingRoom
+	if r != nil {
+		return r.removeWaitingPlayer(p)
+	}
+
+	return fmt.Errorf("Player %d sent a LeaveRoom request when they're roomless!", p.PlayerId)
 }
 
 func handleSuspendRequest(p *Player, requestSuspend bool) error {

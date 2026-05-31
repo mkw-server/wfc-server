@@ -26,14 +26,21 @@ func findPublicRoom(p *Player, region common.MKWServerSearchRegion, gameMode com
 			continue
 		}
 
-		logging.Info(moduleName, "Found a public room", r.roomID, "Player", p.PlayerId, "can join!")
-
-		// to support vr based searches, we would need to loop through all rooms before adding players
+		// First try to add player to the room
 		err := r.tryAddPlayer(p, false)
 		if err != nil {
-			logging.Info(moduleName, "findPublicRoom(): %s", err.Error(), "Continuing room search")
-			continue
+			logging.Info(moduleName, "findPublicRoom(): %s", err.Error(), "Will attempt to add player to wait list")
 		} else {
+			logging.Info(moduleName, "Successfully added Player", p.PlayerId, "to room", r.roomName)
+			return nil
+		}
+
+		// Then try to add player to the room's wait list
+		err = r.tryAddWaitingPlayer(p)
+		if err != nil {
+			logging.Info(moduleName, "findPublicRoom(): Couldn't add player", p.PlayerId, "to room", r.roomName, "wait list for reason", err.Error())
+		} else {
+			logging.Info(moduleName, "Successfully added Player", p.PlayerId, "to room", r.roomName, "wait list")
 			return nil
 		}
 	}
