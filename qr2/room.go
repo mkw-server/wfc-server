@@ -33,11 +33,12 @@ type Room struct {
 	EngineClassID int
 
 	mkwServer       *MKWServer
-	aidBitmap       uint32 // available aid bitmap
-	numAids         uint32 // num non-guest players
-	directAidBitmap uint32 // aid bitmap, including guests.
-	suspended       bool   // match making suspension state
-	canceled        bool   // whether room is canceled
+	aidBitmap       uint32           // available aid bitmap
+	numAids         uint32           // num non-guest players
+	directAidBitmap uint32           // aid bitmap, including guests.
+	suspended       bool             // match making suspension state
+	canceled        bool             // whether room is canceled
+	waitingPlayers  map[*Player]bool // players waiting to join while the room is suspended. public rooms only
 }
 
 func createRoom(host *Player, region common.MKWServerSearchRegion, gameMode common.MKWServerGameMode) error {
@@ -69,6 +70,7 @@ func createRoom(host *Player, region common.MKWServerSearchRegion, gameMode comm
 		aidBitmap:       0,
 		numAids:         0,
 		directAidBitmap: 0,
+		waitingPlayers:  map[*Player]bool{},
 	}
 
 	logging.Notice(moduleName, "Successfully Created room", room.roomID)
@@ -127,6 +129,18 @@ func (r *Room) tryAddPlayer(p *Player, isCreator bool) error {
 	return nil
 }
 
+// Tries to add a player to the room's waiting list
+func (r *Room) tryAddWaitingPlayer(p *Player) error {
+	potentialRoomCount := r.numPlayers() + uint32(len(r.waitingPlayers)) + p.localPlayerCount
+	if potentialRoomCount > MaxPlayerCount {
+		return fmt.Errorf("Room would have %d players", potentialRoomCount)
+	}
+
+	r.waitingPlayers[p] = true
+	p.setWaitingRoom(r)
+	return nil
+}
+
 func (r *Room) removePlayer(p *Player) error {
 	if p == nil {
 		return errors.New("Can't remove a nil player!")
@@ -166,6 +180,18 @@ func (r *Room) removePlayer(p *Player) error {
 	delete(r.players, p)
 
 	r.broadcastMatchPackets()
+	return nil
+}
+
+// Removes passed in player if they're in the waiting list
+func (r *Room) removeWaitingPlayer(p *Player) error {
+	exists := r.waitingPlayers[p]
+	if !exists {
+		return fmt.Errorf("removeWaitingPlayer(): Player %d not found in room %s waiters", p.PlayerId, r.roomName)
+	}
+	delete(r.waitingPlayers, p)
+	p.setWaitingRoom(nil)
+	logging.Info(moduleName, "Successfully removed waiting player", p.PlayerId, "from room", r.roomName)
 	return nil
 }
 
@@ -234,8 +260,30 @@ func (r *Room) updateSuspension() {
 	// all player's suspension vote differs than the room's, flip the room's suspension
 
 	r.suspended = !r.suspended
+
+	// room just unsuspended so waiting players can properly be added
+	// TODO: the broadcast may be spammed here
+	if r.Region != common.Private && !r.suspended {
+		logging.Info(moduleName, "Room", r.roomName, "unsuspended. Starting to add waiting players")
+		r.addWaitingPlayers()
+		logging.Info(moduleName, "Room", r.roomName, "unsuspended. Finished adding waiting players")
+	}
+
 	r.broadcastMatchPackets()
 	logging.Info(moduleName, "Room", r.roomID, "changed suspension from", !r.suspended, "to", r.suspended)
+}
+
+// Adds all waiting players to the room and clears waitingPlayers
+func (r *Room) addWaitingPlayers() {
+	for p := range r.waitingPlayers {
+		err := r.tryAddPlayer(p, false)
+		if err != nil {
+			logging.Info(moduleName, "addWaitingPlayers(): player", p.PlayerId, "failed to join. This shouldn't happen. Reason:", err.Error())
+		}
+		// Remove the player's waiting room regardless of success/failure
+		p.setWaitingRoom(nil)
+	}
+	r.waitingPlayers = map[*Player]bool{}
 }
 
 func (r *Room) broadcastMatchPackets() {
@@ -291,6 +339,15 @@ func (r *Room) close() {
 	delete(rooms, name)
 
 	logging.Info(moduleName, "Successfully closed room", name)
+
+	// Find a new room for the waiting players. Otherwise they would be stuck.
+	for p := range r.waitingPlayers {
+		p.setWaitingRoom(nil)
+		err := findPublicRoom(p, r.Region, r.gameMode)
+		if err != nil {
+			logging.Info(moduleName, "Failed to find room for player", p.PlayerId, "after room", r.roomName, "closed")
+		}
+	}
 }
 
 // Finds a new host for the room.

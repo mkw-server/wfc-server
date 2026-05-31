@@ -41,6 +41,7 @@ type Player struct {
 	messageMutex    *deadlock.Mutex
 	messageAckWaker *sleep.Waker
 	roomPointer     *Room
+	waitingRoom     *Room
 	RoomName        string
 
 	recvSearchId    bool
@@ -104,6 +105,14 @@ func removePlayer(addr uint64) {
 		}
 	}
 
+	// remove player from room they're waiting to join
+	if player.waitingRoom != nil {
+		err := player.waitingRoom.removeWaitingPlayer(player)
+		if err != nil {
+			logging.Info(moduleName, "player.removePlayer() failed to remove from waiting list. Reason:", err.Error())
+		}
+	}
+
 	if player.login != nil {
 		player.login.player = nil
 		player.login = nil
@@ -113,6 +122,10 @@ func removePlayer(addr uint64) {
 	delete(playerBySearchID, players[addr].SearchId)
 
 	delete(players, addr)
+}
+
+func (p *Player) setWaitingRoom(r *Room) {
+	p.waitingRoom = r
 }
 
 func (p *Player) localPlayerCountOk() bool {
