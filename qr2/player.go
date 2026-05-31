@@ -159,7 +159,6 @@ func setPlayerData(moduleName string, addr net.Addr, playerId uint32, payload ma
 	}
 
 	if !playerExists {
-		logging.Info(moduleName, "creating player in qr2 with addr", addr.String())
 		player = &Player{
 			PlayerId:        playerId,
 			Addr:            *addr.(*net.UDPAddr),
@@ -180,7 +179,7 @@ func setPlayerData(moduleName string, addr net.Addr, playerId uint32, payload ma
 	}
 
 	if !playerExists {
-		logging.Info(moduleName, "Creating playerId", aurora.Cyan(playerId).String(), "for", addr.String())
+		logging.Info(moduleName, "Creating PlayerId", aurora.Cyan(playerId).String(), "for", addr.String())
 
 		// Set search ID
 		for {
@@ -189,7 +188,7 @@ func setPlayerData(moduleName string, addr net.Addr, playerId uint32, payload ma
 				player.SearchId = searchID
 				player.Data["+searchid"] = strconv.FormatUint(searchID, 10)
 				playerBySearchID[searchID] = player
-				logging.Info(moduleName, "Assigning playerId", player.PlayerId, "searchId:", searchID)
+				logging.Info(moduleName, "Assigning PlayerId", player.PlayerId, "SearchId:", searchID)
 				break
 			}
 		}
@@ -277,7 +276,7 @@ func (player *Player) setProfileID(moduleName string, newPID string, gpcmIP stri
 	player.Data["+fcgameid"] = loginInfo.FriendKeyGame
 
 	player.Data["dwc_pid"] = newPID
-	logging.Notice(moduleName, "Opened player with PID", aurora.Cyan(newPID))
+	logging.Notice(moduleName, "Opened player", player.PlayerId, "with PID", aurora.Cyan(newPID))
 
 	return true
 }

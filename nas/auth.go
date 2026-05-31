@@ -81,7 +81,6 @@ func handleAuthRequest(moduleName string, w http.ResponseWriter, r *http.Request
 			value = values[0]
 		}
 
-		logging.Info(moduleName, aurora.Cyan(key).String()+":", aurora.Cyan(value))
 		fields[key] = value
 	}
 

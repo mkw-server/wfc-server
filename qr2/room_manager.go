@@ -154,7 +154,7 @@ func HandlePacket(index uint64, data []byte, address string) {
 				region: common.MKWServerSearchRegion(msg[0x10]),
 				mode:   common.MKWServerGameMode(msg[0x11]),
 			}
-			logging.Info(moduleName, "Received SearchPublicRoom from", p.PlayerId)
+			logging.Info(moduleName, "Received SearchPublicRoom from player", p.PlayerId, "where region is", searchReq.region, "and mode is", searchReq.mode)
 			err := handleSearchPublicRoomRequest(p, searchReq)
 			if err != nil {
 				logging.Info(moduleName, "SearchPublicRoom failed with reason:", err.Error())

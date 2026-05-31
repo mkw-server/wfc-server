@@ -27,6 +27,7 @@ type MKWServer struct {
 var mkwServers = map[int]*MKWServer{}
 
 func startMKWServer(r *Room) (*MKWServer, error) {
+	logging.Info(moduleName, "Attempting to start mkw-server process for room", r.roomName)
 	// for now just use the gamespy address. Only works if wfc-server and mkw-server are on the same machine
 	mkwServerIP := net.ParseIP(*common.GetConfig().GameSpyAddress)
 	if mkwServerIP == nil {

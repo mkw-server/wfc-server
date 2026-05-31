@@ -73,7 +73,7 @@ func createRoom(host *Player, region common.MKWServerSearchRegion, gameMode comm
 		waitingPlayers:  map[*Player]bool{},
 	}
 
-	logging.Notice(moduleName, "Successfully Created room", room.roomID)
+	logging.Notice(moduleName, "Successfully Created room", room.roomID, "name", room.roomName)
 
 	mkwServer, err := startMKWServer(room)
 	if err != nil {
@@ -88,7 +88,7 @@ func createRoom(host *Player, region common.MKWServerSearchRegion, gameMode comm
 	}
 
 	rooms[name] = room
-	logging.Info(moduleName, "Created room with Region", room.Region)
+	logging.Info(moduleName, "Created room", room.roomName, "with Region", room.Region, "gameMode", room.gameMode)
 	return nil
 }
 
@@ -118,6 +118,7 @@ func (r *Room) tryAddPlayer(p *Player, isCreator bool) error {
 	// excluded here since the mkw-server process won't start if the room has just been
 	// created --- we have to wait for the process to tell us it started and is ready
 	// to add players
+	logging.Info(moduleName, "Player", p.PlayerId, "added to room", r.roomName, "where isCreator is", isCreator)
 	if !isCreator {
 		err := r.mkwServer.sendAddPlayerRequest(p, isCreator)
 		if err != nil {
