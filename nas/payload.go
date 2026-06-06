@@ -14,6 +14,8 @@ import (
 	"net/url"
 	"os"
 	"strconv"
+
+	"wwfc/common"
 	"wwfc/logging"
 )
 
@@ -77,6 +79,14 @@ func handlePayloadRequest(moduleName string, w http.ResponseWriter, r *http.Requ
 		return
 	}
 
+	expectedMkwServerClientVer := common.GetConfig().MkwServerClientVersion
+
+	mkwServerVer := query.Get("v")
+	if mkwServerVer != expectedMkwServerClientVer {
+		logging.Error(moduleName, "Invalid mkw-server-client version. Actual:", mkwServerVer, "Expected:", expectedMkwServerClientVer)
+		return
+	}
+
 	dat, err := os.ReadFile("payload/binary/payload." + game + ".bin")
 	if err != nil {
 		logging.Error(moduleName, "Failed to read payload file")
@@ -114,7 +124,7 @@ func handlePayloadRequest(moduleName string, w http.ResponseWriter, r *http.Requ
 		}
 
 		// Generate the salt hash
-		saltHashData := "payload?g=" + query["g"][0] + "&s=" + query["s"][0]
+		saltHashData := "payload?g=" + query["g"][0] + "&s=" + query["s"][0] + "&v=" + query["v"][0]
 
 		hashCtx := sha256.New()
 		_, err = hashCtx.Write([]byte(saltHashData))
