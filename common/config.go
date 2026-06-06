@@ -44,8 +44,9 @@ type Config struct {
 	AllowMultipleDeviceIDs      string `xml:"allowMultipleDeviceIDs"`
 	AllowConnectWithoutDeviceID bool   `xml:"allowConnectWithoutDeviceID"`
 
-	ServerName    string `xml:"serverName,omitempty"`
-	MkwServerPath string `xml:"mkwServerPath,omitempty"`
+	ServerName             string `xml:"serverName,omitempty"`
+	MkwServerPath          string `xml:"mkwServerPath,omitempty"`
+	MkwServerClientVersion string `xml:"mkw-server-client-version,omitempty"`
 }
 
 var config Config

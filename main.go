@@ -34,6 +34,13 @@ var (
 func main() {
 	logging.SetLevel(*config.LogLevel)
 
+	if config.MkwServerClientVersion == "" {
+		logging.Error("BACKEND:", "mkw-server-client-version isn't configured in config.xml! Please configure it!")
+		os.Exit(1)
+		return
+	}
+	logging.Info("BACKEND:", "Expected mkw-server-client-version is", config.MkwServerClientVersion)
+
 	args := os.Args[1:]
 
 	// Separate frontend and backend into two separate processes.
