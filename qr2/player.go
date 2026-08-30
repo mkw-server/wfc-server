@@ -343,6 +343,10 @@ func (p *Player) setLocalPlayers(lpc uint8) error {
 	return nil
 }
 
+func (p *Player) hasGuest() bool {
+	return p.localPlayerCount == 2
+}
+
 // Save the players to a file. Expects the mutex to be locked.
 func savePlayers() error {
 	file, err := os.OpenFile("state/qr2_players.gob", os.O_CREATE|os.O_WRONLY|os.O_TRUNC, 0644)

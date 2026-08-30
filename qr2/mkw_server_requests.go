@@ -83,6 +83,7 @@ func packAddPlayerRequest(player *Player, isHost bool) ([]byte, error) {
 	binary.Write(buf, binary.BigEndian, player.aid)
 	binary.Write(buf, binary.BigEndian, isHost)
 	binary.Write(buf, binary.BigEndian, player.SearchId)
+	binary.Write(buf, binary.BigEndian, player.hasGuest())
 	return buf.Bytes(), nil
 }
 
